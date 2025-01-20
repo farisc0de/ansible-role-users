@@ -1,0 +1,29 @@
+---
+# Default variables for user management role
+
+# Users configuration
+users: []  # List of users to manage
+# Example user structure:
+# users:
+#   - username: example_user
+#     state: present
+#     shell: /bin/bash
+#     generate_ssh_key: true
+#     append_groups: true
+#     groups: []
+#     home_mode: "0775"
+#     public_html: true
+#     public_html_mode: "0755"
+#     sudo_enabled: false
+#     sudo_commands: []
+
+# Default values for user properties (used if not specified for individual users)
+default_user_shell: /bin/bash
+default_user_state: present
+default_user_generate_ssh_key: true
+default_user_append_groups: true
+default_user_home_mode: "0775"
+default_user_public_html: true
+default_user_public_html_mode: "0755"
+default_user_sudo_enabled: false
+default_user_sudo_commands: []

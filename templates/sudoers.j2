@@ -1,0 +1,6 @@
+# Sudo configuration for {{ current_user.username }}
+{% if user_sudo_commands | length > 0 %}
+{{ current_user.username }} ALL=(ALL) NOPASSWD: {{ user_sudo_commands | join(', ') }}
+{% else %}
+{{ current_user.username }} ALL=(ALL) ALL
+{% endif %}

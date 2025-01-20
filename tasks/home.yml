@@ -1,0 +1,25 @@
+---
+# Tasks for home directory configuration
+
+- name: Configure home directory permissions
+  ansible.builtin.file:
+    path: "/home/{{ user_name }}"
+    mode: "{{ user_home_mode }}"
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    recurse: true
+  when: user_name | length > 0
+  tags: ['user', 'home']
+
+- name: Create public_html directory
+  ansible.builtin.file:
+    path: "/home/{{ user_name }}/public_html"
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: "{{ user_public_html_mode }}"
+  when: 
+    - user_name | length > 0
+    - user_public_html | bool
+  tags: ['user', 'home', 'public_html']

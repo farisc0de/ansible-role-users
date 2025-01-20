@@ -1,0 +1,25 @@
+---
+# Main tasks file for user management role
+
+- name: Validate users list
+  ansible.builtin.assert:
+    that:
+      - users is defined
+      - users is sequence
+    fail_msg: "The 'users' variable must be defined as a list"
+
+- name: Include user management tasks for each user
+  ansible.builtin.include_tasks: user_tasks.yml
+  loop: "{{ users }}"
+  loop_control:
+    loop_var: current_user
+  tags: ['user']
+
+- name: Include home directory configuration tasks
+  ansible.builtin.import_tasks: home.yml
+  tags: ['user', 'home']
+
+- name: Include sudo configuration tasks
+  ansible.builtin.import_tasks: sudo.yml
+  when: user_sudo_enabled | bool
+  tags: ['user', 'sudo']

@@ -1,0 +1,26 @@
+---
+# Handlers for user management role
+
+- name: reload sshd
+  ansible.builtin.service:
+    name: sshd
+    state: reloaded
+  listen: "reload ssh service"
+
+- name: reload ssh
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded
+  listen: "reload ssh service"
+
+- name: restart sshd
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  listen: "restart ssh service"
+
+- name: restart ssh
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  listen: "restart ssh service"

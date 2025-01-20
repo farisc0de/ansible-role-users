@@ -1,0 +1,11 @@
+---
+# Tasks for user creation and basic setup
+
+- name: Ensure user exists
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    append: "{{ user_append_groups }}"
+    generate_ssh_key: "{{ user_generate_ssh_key }}"
+    shell: "{{ user_shell }}"
+  when: user_name | length > 0
+  tags: ['user', 'user_creation']

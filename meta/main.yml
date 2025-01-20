@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  role_name: users
+  namespace: farisc0de
+  author: Faris Alotaibi
+  description: Role to manage user creation and configuration
+  license: MIT
+  min_ansible_version: "2.9"
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+    - name: EL  # Enterprise Linux
+      versions:
+        - all
+
+  galaxy_tags:
+    - system
+    - user
+    - security
+
+dependencies: []
