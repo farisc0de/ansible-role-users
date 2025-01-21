@@ -1,0 +1,75 @@
+---
+# Tasks for managing user SSH configuration
+
+- name: Ensure .ssh directory exists for users
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.home | default('/home/' + item.username) }}/.ssh"
+    state: directory
+    owner: "{{ item.username }}"
+    group: "{{ item.group | default(item.username) }}"
+    mode: "{{ item.ssh.dir_mode | default(default_ssh_dir_mode) }}"
+  loop: "{{ users }}"
+  when: 
+    - item.state | default(default_user_state) == 'present'
+    - item.ssh is defined
+    - item.ssh.enabled | default(true) | bool
+
+- name: Manage authorized_keys files for users with direct key content
+  become: true
+  ansible.builtin.template:
+    src: authorized_keys.j2
+    dest: "{{ item.home | default('/home/' + item.username) }}/.ssh/authorized_keys"
+    owner: "{{ item.username }}"
+    group: "{{ item.group | default(item.username) }}"
+    mode: "{{ item.ssh.authorized_keys_mode | default(default_authorized_keys_mode) }}"
+  loop: "{{ users }}"
+  when:
+    - item.state | default(default_user_state) == 'present'
+    - item.ssh is defined
+    - item.ssh.enabled | default(true) | bool
+    - item.ssh.authorized_keys is defined
+    - (item.ssh.authorized_keys | selectattr('key', 'defined') | list | length > 0) or
+      (item.ssh.authorized_keys | selectattr('content', 'defined') | list | length > 0)
+
+- name: Copy SSH public key files for users
+  become: true
+  ansible.builtin.copy:
+    src: "{{ key_item.src }}"
+    dest: "{{ item.home | default('/home/' + item.username) }}/.ssh/authorized_keys"
+    owner: "{{ item.username }}"
+    group: "{{ item.group | default(item.username) }}"
+    mode: "{{ item.ssh.authorized_keys_mode | default(default_authorized_keys_mode) }}"
+    validate: "ssh-keygen -l -f %s"
+  loop: "{{ users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  vars:
+    key_files: "{{ item.ssh.authorized_keys | selectattr('src', 'defined') | list }}"
+  when:
+    - item.state | default(default_user_state) == 'present'
+    - item.ssh is defined
+    - item.ssh.enabled | default(true) | bool
+    - item.ssh.authorized_keys is defined
+    - key_files | length > 0
+    - key_item.src is defined
+  with_subelements:
+    - "{{ users | selectattr('ssh.authorized_keys', 'defined') | list }}"
+    - ssh.authorized_keys
+    - skip_missing: true
+
+- name: Manage SSH config for users
+  become: true
+  ansible.builtin.template:
+    src: ssh_config.j2
+    dest: "{{ item.home | default('/home/' + item.username) }}/.ssh/config"
+    owner: "{{ item.username }}"
+    group: "{{ item.group | default(item.username) }}"
+    mode: "{{ item.ssh.config_mode | default(default_ssh_config_mode) }}"
+  loop: "{{ users }}"
+  when:
+    - item.state | default(default_user_state) == 'present'
+    - item.ssh is defined
+    - item.ssh.enabled | default(true) | bool
+    - item.ssh.config is defined
+    - item.ssh.config.enabled | default(false) | bool

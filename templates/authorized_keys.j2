@@ -1,0 +1,12 @@
+{# Template for authorized_keys file #}
+{% for key_entry in item.ssh.authorized_keys %}
+{%- if key_entry.state is defined and key_entry.state == 'absent' %}
+{# Skip keys marked for removal #}
+{% elif key_entry.key is defined %}
+{{ key_entry.key }}
+{% elif key_entry.src is defined %}
+{{ lookup('file', key_entry.src) }}
+{% elif key_entry.content is defined %}
+{{ key_entry.content }}
+{% endif %}
+{% endfor %}

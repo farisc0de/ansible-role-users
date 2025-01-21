@@ -3,27 +3,77 @@
 
 # Users configuration
 users: []  # List of users to manage
-# Example user structure:
-# users:
-#   - username: example_user
-#     state: present
-#     shell: /bin/bash
-#     generate_ssh_key: true
-#     append_groups: true
-#     groups: []
-#     home_mode: "0775"
-#     public_html: true
-#     public_html_mode: "0755"
-#     sudo_enabled: false
-#     sudo_commands: []
 
-# Default values for user properties (used if not specified for individual users)
+# Example of user configuration with external SSH key:
+# users:
+#   - username: webapp
+#     ssh:
+#       enabled: true
+#       authorized_keys:
+#         - key: "{{ webapp_ssh_key }}"  # Key provided by playbook
+#         - src: "{{ ssh_keys_path }}/webapp.pub"  # Path provided by playbook
+#
+#   - username: admin
+#     ssh:
+#       enabled: true
+#       authorized_keys:
+#         - src: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa.pub"  # Use system path
+
+# Example of complete user configuration:
+# users:
+#   - username: admin_user              # Required: Username
+#     state: present                    # Optional: present/absent (default: present)
+#     comment: "Admin User"             # Optional: User description/full name
+#     shell: /bin/bash                 # Optional: User shell (default: /bin/bash)
+#     groups:                          # Optional: List of groups
+#       - sudo
+#       - docker
+#     append_groups: true              # Optional: Append to groups (default: true)
+#     home: /home/admin_user           # Optional: Custom home directory
+#     home_mode: "0750"                # Optional: Home directory permissions (default: "0775")
+#     public_html: true                # Optional: Enable public_html directory (default: true)
+#     public_html_mode: "0755"         # Optional: public_html directory permissions (default: "0755")
+#     sudo:
+#       enabled: true                  # Optional: Enable sudo access (default: false)
+#       commands:                      # Optional: List of allowed sudo commands
+#         - "/usr/bin/docker"
+#         - "/usr/bin/systemctl"
+#     ssh:
+#       enabled: true                  # Optional: Enable SSH configuration (default: true)
+#       dir_mode: "0700"              # Optional: SSH directory permissions (default: "0700")
+#       authorized_keys_mode: "0600"   # Optional: authorized_keys file permissions (default: "0600")
+#       authorized_keys:              # Optional: List of SSH keys
+#         - key: "{{ lookup('file', 'files/keys/admin.pub') }}"  # Key content from variable
+#         - src: "{{ ssh_keys_path }}/admin.pub"                # Key from file path
+#       config:
+#         enabled: true               # Optional: Enable SSH client config (default: false)
+#         config_mode: "0600"         # Optional: SSH config file permissions (default: "0600")
+#
+#   - username: service_user          # Example of a service account
+#     state: present
+#     shell: /sbin/nologin
+#     home: /opt/service_user
+#     ssh:
+#       enabled: true
+#       authorized_keys:
+#         - src: "{{ ssh_keys_path }}/service.pub"
+#
+#   - username: old_user             # Example of user removal
+#     state: absent
+
+# Default values for user properties
 default_user_shell: /bin/bash
 default_user_state: present
 default_user_generate_ssh_key: true
 default_user_append_groups: true
-default_user_home_mode: "0775"
-default_user_public_html: true
+default_user_home_mode: "0750"
+default_user_public_html: false
 default_user_public_html_mode: "0755"
 default_user_sudo_enabled: false
 default_user_sudo_commands: []
+
+# SSH Configuration defaults
+default_ssh_dir_mode: "0700"
+default_ssh_key_mode: "0600"
+default_authorized_keys_mode: "0600"
+default_ssh_config_mode: "0644"

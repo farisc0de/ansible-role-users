@@ -15,6 +15,14 @@
     loop_var: current_user
   tags: ['user']
 
+- name: Include SSH management tasks
+  ansible.builtin.include_tasks:
+    file: ssh.yml
+  tags:
+    - users
+    - ssh
+    - ssh_management
+
 - name: Include home directory configuration tasks
   ansible.builtin.import_tasks: home.yml
   tags: ['user', 'home']
