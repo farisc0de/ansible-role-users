@@ -26,8 +26,3 @@
 - name: Include home directory configuration tasks
   ansible.builtin.import_tasks: home.yml
   tags: ['user', 'home']
-
-- name: Include sudo configuration tasks
-  ansible.builtin.import_tasks: sudo.yml
-  when: user_sudo_enabled | bool
-  tags: ['user', 'sudo']

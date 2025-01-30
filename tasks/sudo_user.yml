@@ -1,0 +1,20 @@
+---
+# Tasks for configuring sudo access for a user
+
+- name: Configure sudo access for user
+  ansible.builtin.template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ current_user.username }}"
+    mode: "0440"
+    validate: "visudo -cf %s"
+  when:
+    - current_user.sudo.enabled | bool
+    - current_user.sudo.commands is defined
+  tags: ['sudo']
+
+- name: Remove sudoers file if sudo is disabled
+  ansible.builtin.file:
+    path: "/etc/sudoers.d/{{ current_user.username }}"
+    state: absent
+  when: not current_user.sudo.enabled | bool
+  tags: ['sudo']
