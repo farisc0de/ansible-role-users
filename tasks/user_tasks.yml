@@ -67,7 +67,7 @@
   tags: ['sudo']
 
 - name: Configure SSH for user
-  ansible.builtin.include_tasks: ssh_user.yml
+  ansible.builtin.include_tasks: ssh.yml
   when:
     - user_state == 'present'
     - current_user.ssh is defined
