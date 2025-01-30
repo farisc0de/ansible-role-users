@@ -3,23 +3,28 @@
 
 - name: Configure home directory permissions
   ansible.builtin.file:
-    path: "/home/{{ user_name }}"
-    mode: "{{ user_home_mode }}"
+    path: "{{ item.home | default('/home/' + item.username) }}"
+    mode: "{{ item.home_mode | default('0750') }}"
     state: directory
-    owner: "{{ user_name }}"
-    group: "{{ user_name }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.group | default(item.username) }}"
     recurse: true
-  when: user_name | length > 0
+  loop: "{{ users }}"
+  when: 
+    - item.state | default('present') == 'present'
+    - item.username is defined
   tags: ['user', 'home']
 
 - name: Create public_html directory
   ansible.builtin.file:
-    path: "/home/{{ user_name }}/public_html"
+    path: "{{ item.home | default('/home/' + item.username) }}/public_html"
     state: directory
-    owner: "{{ user_name }}"
-    group: "{{ user_name }}"
-    mode: "{{ user_public_html_mode }}"
+    owner: "{{ item.username }}"
+    group: "{{ item.group | default(item.username) }}"
+    mode: "{{ item.public_html_mode | default('0755') }}"
+  loop: "{{ users }}"
   when: 
-    - user_name | length > 0
-    - user_public_html | bool
+    - item.state | default('present') == 'present'
+    - item.username is defined
+    - item.public_html | default(false) | bool
   tags: ['user', 'home', 'public_html']
