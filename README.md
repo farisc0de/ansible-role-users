@@ -1,6 +1,6 @@
 # User Management Role
 
-An Ansible role for managing multiple user accounts, home directories, and sudo privileges on Linux systems.
+An Ansible role for managing multiple user accounts, home directories, SSH configuration, and sudo privileges on Linux systems.
 
 ## Requirements
 
@@ -18,45 +18,45 @@ The role uses a list of users to manage multiple accounts. Each user can have in
 
 ```yaml
 users:
-  - username: example_user    # Required
-    state: present           # Optional: present/absent (default: present)
-    shell: /bin/bash        # Optional (default: /bin/bash)
-    append_groups: true     # Optional (default: true)
-    groups: []              # Optional: list of additional groups
-    home_mode: "0775"       # Optional (default: "0775")
-    public_html: true       # Optional (default: true)
+  - username: example_user     # Required
+    state: present            # Optional: present/absent (default: present)
+    shell: /bin/bash         # Optional (default: /bin/bash)
+    home: /home/example_user # Optional (default: /home/username)
+    system: false            # Optional: create as system user (default: false)
+    append_groups: true      # Optional (default: true)
+    groups: []               # Optional: list of additional groups
+    home_mode: "0750"        # Optional (default: "0750")
+    public_html: false       # Optional (default: false)
     public_html_mode: "0755" # Optional (default: "0755")
-    sudo_enabled: false     # Optional (default: false)
-    sudo_commands: []       # Optional: list of allowed sudo commands
-    ssh:                    # Optional: SSH configuration
-      enabled: true         # Optional (default: true)
-      dir_mode: "0700"      # Optional (default: "0700")
+    generate_ssh_key: false  # Optional: generate SSH key pair (default: false)
+    sudo:                    # Optional: sudo configuration
+      enabled: false         # Optional (default: false)
+      commands:             # Optional: list of allowed sudo commands
+        - "/usr/bin/apt"
+        - "/usr/bin/systemctl restart service"
+    ssh:                     # Optional: SSH configuration
+      enabled: true          # Optional (default: true)
+      dir_mode: "0700"       # Optional (default: "0700")
       authorized_keys_mode: "0600"  # Optional (default: "0600")
-      authorized_keys:      # Optional: list of SSH keys
+      authorized_keys:       # Optional: list of SSH keys
         - key: "{{ variable_name }}"  # SSH key content from a variable
         - src: "{{ ssh_keys_path }}/user.pub"  # Path to public key file
-      config:              # Optional: SSH client configuration
-        enabled: false     # Optional (default: false)
+      config:               # Optional: SSH client configuration
+        enabled: false      # Optional (default: false)
         config_mode: "0600" # Optional (default: "0600")
 ```
 
-### Default Values
+### Security Features
 
-You can override these default values for all users:
+The role implements several security best practices by default:
 
-```yaml
-default_user_shell: /bin/bash
-default_user_state: present
-default_user_append_groups: true
-default_user_home_mode: "0775"
-default_user_public_html: true
-default_user_public_html_mode: "0755"
-default_user_sudo_enabled: false
-default_user_sudo_commands: []
-default_ssh_dir_mode: "0700"
-default_authorized_keys_mode: "0600"
-default_ssh_config_mode: "0600"
-```
+- Home directories are created with `0750` permissions (owner can read/write/execute, group can read/execute)
+- SSH directories are created with `0700` permissions (only owner can access)
+- SSH keys and config files use `0600` permissions (only owner can read/write)
+- Public HTML directories are disabled by default
+- SSH key generation is disabled by default
+- Sudo access is disabled by default
+- System user creation is supported via the `system` parameter
 
 ## Dependencies
 
@@ -75,10 +75,11 @@ None
         users:
           - username: john_doe
             groups: ['developers']
-            sudo_enabled: true
-            sudo_commands:
-              - "/usr/bin/apt"
-              - "/usr/bin/dnf"
+            sudo:
+              enabled: true
+              commands:
+                - "/usr/bin/apt"
+                - "/usr/bin/dnf"
             ssh:
               enabled: true
               authorized_keys:
@@ -88,7 +89,7 @@ None
           - username: jane_doe
             shell: /bin/zsh
             groups: ['developers', 'docker']
-            public_html: false
+            public_html: true
             ssh:
               enabled: true
               authorized_keys:
@@ -97,23 +98,19 @@ None
                 enabled: true
             
           - username: service_account
+            system: true
+            shell: /sbin/nologin
+            home: /opt/service
+            home_mode: "0700"
+            
+          - username: old_user
             state: absent  # Remove this user
 ```
-
-## Role Tags
-
-- `user`: All user management tasks
-- `user_creation`: User creation tasks
-- `home`: Home directory configuration tasks
-- `sudo`: Sudo privileges configuration tasks
-- `ssh`: SSH configuration tasks
-- `ssh_keys`: SSH key management tasks
-- `ssh_config`: SSH client configuration tasks
 
 ## License
 
 MIT
 
-## Author
+## Author Information
 
-Faris Alotaibi
+Created by [farisc0de](https://github.com/farisc0de)

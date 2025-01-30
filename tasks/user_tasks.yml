@@ -1,34 +1,44 @@
 ---
 # Tasks for managing individual users
 
+- name: Validate required user parameters
+  ansible.builtin.assert:
+    that:
+      - current_user.username is defined
+      - current_user.username | string
+    fail_msg: "Username must be defined for each user"
+    
 - name: Set user variables with defaults
   ansible.builtin.set_fact:
-    user_state: "{{ current_user.state | default(default_user_state) }}"
-    user_shell: "{{ current_user.shell | default(default_user_shell) }}"
-    user_generate_ssh_key: "{{ current_user.generate_ssh_key | default(default_user_generate_ssh_key) }}"
-    user_append_groups: "{{ current_user.append_groups | default(default_user_append_groups) }}"
+    user_state: "{{ current_user.state | default('present') }}"
+    user_shell: "{{ current_user.shell | default('/bin/bash') }}"
+    user_home: "{{ current_user.home | default('/home/' + current_user.username) }}"
+    user_generate_ssh_key: "{{ current_user.generate_ssh_key | default(false) }}"
+    user_append_groups: "{{ current_user.append_groups | default(true) }}"
     user_groups: "{{ current_user.groups | default([]) }}"
-    user_home_mode: "{{ current_user.home_mode | default(default_user_home_mode) }}"
-    user_public_html: "{{ current_user.public_html | default(default_user_public_html) }}"
-    user_public_html_mode: "{{ current_user.public_html_mode | default(default_user_public_html_mode) }}"
-    user_sudo_enabled: "{{ current_user.sudo_enabled | default(default_user_sudo_enabled) }}"
-    user_sudo_commands: "{{ current_user.sudo_commands | default(default_user_sudo_commands) }}"
+    user_home_mode: "{{ current_user.home_mode | default('0750') }}"
+    user_public_html: "{{ current_user.public_html | default(false) }}"
+    user_public_html_mode: "{{ current_user.public_html_mode | default('0755') }}"
+    user_system: "{{ current_user.system | default(false) }}"
 
 - name: Manage user account
   ansible.builtin.user:
     name: "{{ current_user.username }}"
     state: "{{ user_state }}"
     shell: "{{ user_shell }}"
+    home: "{{ user_home }}"
+    system: "{{ user_system }}"
     groups: "{{ user_groups }}"
     append: "{{ user_append_groups }}"
     generate_ssh_key: "{{ user_generate_ssh_key }}"
+    create_home: true
   register: user_creation
   notify: "reload ssh service"
   tags: ['user_creation']
 
 - name: Configure user home directory
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME_DIR }}/{{ current_user.username }}"
+    path: "{{ user_home }}"
     mode: "{{ user_home_mode }}"
     owner: "{{ current_user.username }}"
     group: "{{ current_user.username }}"
@@ -38,7 +48,7 @@
 
 - name: Create public_html directory
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME_DIR }}/{{ current_user.username }}/public_html"
+    path: "{{ user_home }}/public_html"
     mode: "{{ user_public_html_mode }}"
     owner: "{{ current_user.username }}"
     group: "{{ current_user.username }}"
@@ -49,32 +59,17 @@
   tags: ['home']
 
 - name: Configure sudo access
-  ansible.builtin.template:
-    src: sudoers.j2
-    dest: "/etc/sudoers.d/{{ current_user.username }}"
-    mode: "0440"
-    validate: "visudo -cf %s"
+  ansible.builtin.include_tasks: sudo_user.yml
   when:
     - user_state == 'present'
-    - user_sudo_enabled | bool
+    - current_user.sudo is defined
+    - current_user.sudo.enabled | default(false) | bool
   tags: ['sudo']
 
-- name: Remove sudoers file if user is removed or sudo is disabled
-  ansible.builtin.file:
-    path: "/etc/sudoers.d/{{ current_user.username }}"
-    state: absent
-  when:
-    - user_state == 'absent' or not user_sudo_enabled
-  tags: ['sudo']
-
-- name: Configure SSH authorized keys
-  ansible.builtin.authorized_key:
-    user: "{{ current_user.username }}"
-    key: "{{ lookup('file', ansible_env.HOME_DIR + '/' + current_user.username + '/.ssh/id_rsa.pub') }}"
-    state: present
+- name: Configure SSH for user
+  ansible.builtin.include_tasks: ssh_user.yml
   when:
     - user_state == 'present'
-    - user_generate_ssh_key | bool
-    - user_creation.changed
-  notify: "reload ssh service"
-  tags: ['user_creation']
+    - current_user.ssh is defined
+    - current_user.ssh.enabled | default(true) | bool
+  tags: ['ssh']
