@@ -21,6 +21,30 @@
     user_public_html_mode: "{{ current_user.public_html_mode | default('0755') }}"
     user_system: "{{ current_user.system | default(false) }}"
 
+- name: Ensure groups exist
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ user_groups }}"
+  when: 
+    - user_groups is defined
+    - user_groups | length > 0
+  tags: ['user_creation']
+
+- name: Manage user account
+  ansible.builtin.user:
+    name: "{{ current_user.username }}"
+    state: "{{ user_state }}"
+    shell: "{{ user_shell }}"
+    home: "{{ user_home }}"
+    system: "{{ user_system }}"
+    groups: "{{ user_groups }}"
+    append: "{{ user_append_groups }}"
+    generate_ssh_key: "{{ user_generate_ssh_key }}"
+    create_home: true
+  register: user_creation
+  notify: "reload ssh service"
+  tags: ['user_creation']
 - name: Manage user account
   ansible.builtin.user:
     name: "{{ current_user.username }}"
