@@ -25,6 +25,8 @@ users: []  # List of users to manage
 #     state: present                    # Optional: present/absent (default: present)
 #     comment: "Admin User"             # Optional: User description/full name
 #     shell: /bin/bash                 # Optional: User shell (default: /bin/bash)
+#     password: "mysecretpassword"      # Optional: Set user password (will be hashed)
+#     password_never_expires: true      # Optional: Set password to never expire
 #     groups:                          # Optional: List of groups
 #       - sudo
 #       - docker

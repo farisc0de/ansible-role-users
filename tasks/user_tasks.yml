@@ -42,20 +42,7 @@
     append: "{{ user_append_groups }}"
     generate_ssh_key: "{{ user_generate_ssh_key }}"
     create_home: true
-  register: user_creation
-  notify: "reload ssh service"
-  tags: ['user_creation']
-- name: Manage user account
-  ansible.builtin.user:
-    name: "{{ current_user.username }}"
-    state: "{{ user_state }}"
-    shell: "{{ user_shell }}"
-    home: "{{ user_home }}"
-    system: "{{ user_system }}"
-    groups: "{{ user_groups }}"
-    append: "{{ user_append_groups }}"
-    generate_ssh_key: "{{ user_generate_ssh_key }}"
-    create_home: true
+    password_expire_max: -1
   register: user_creation
   notify: "reload ssh service"
   tags: ['user_creation']
@@ -97,3 +84,20 @@
     - current_user.ssh is defined
     - current_user.ssh.enabled | default(true) | bool
   tags: ['ssh']
+
+- name: Change user password
+  ansible.builtin.user:
+    name: "{{ current_user.username }}"
+    password: "{{ current_user.password | password_hash('sha512') }}"
+    update_password: always
+  when:
+    - user_state == 'present'
+    - current_user.password is defined
+  tags: ['password']
+
+- name: Set password to never expire for specific user
+  ansible.builtin.command: chage -M -1 {{ current_user.username }}
+  when:
+    - user_state == 'present'
+    - current_user.password_never_expires | default(false) | bool
+  tags: ['password', 'expiry']
